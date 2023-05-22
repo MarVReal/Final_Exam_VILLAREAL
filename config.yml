@@ -1,0 +1,71 @@
+---
+- hosts: localhost
+  name: Intro
+  tasks:
+
+      - name: Read and display file contents
+        shell: cat ~/Final_Exam_Villareal/intro.txt
+        register: file_contents
+
+      - name: Display file contents
+        debug:
+          var: file_contents.stdout_lines
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: Setting MOTD File
+    copy:
+      dest: /etc/motd
+      content: "Ansible Managed by marv\n"
+      owner: root
+      group: root
+      mode: '644'
+
+  - name: Dpkg fixing in Ubuntu
+    shell: |
+            dpkg --configure -a
+    when: ansible_distribution == "Ubuntu"
+
+  - name: Update and Upgrade remote in Ubuntu servers
+    apt:
+      update_cache: yes
+      upgrade: yes
+    when: ansible_distribution == "Ubuntu"
+
+  - name: Update and Upgrade remote in CentOS servers
+    yum:
+      name: '*'
+      state: latest
+      update_cache: yes
+    when: ansible_distribution == 'CentOS'
+
+  - name: Install Packages for ELK (Ubuntu)
+    apt:
+      name:
+        - apt-transport-https
+        - openssl
+        - default-jdk
+        - python3-firewall
+      state: present
+      update_cache: yes
+    when: ansible_distribution == "Ubuntu"
+
+  - name: Install Packages for ELK (CentOS)
+    yum:
+      name:
+       - yum-utils
+       - openssl
+       - java-11-openjdk
+       - java-11-openjdk-devel
+       - firewalld
+      state: present
+      update_cache: yes
+    when: ansible_distribution == "CentOS"
+
+- hosts: all
+  become: true
+  roles:
+    - Enterprise_Service
+    - Monitoring_Tool
